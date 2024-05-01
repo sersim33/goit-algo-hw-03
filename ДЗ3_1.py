@@ -2,43 +2,44 @@ import os
 import sys
 import shutil
 
-def copy_and_sort(source_dir, destination_dir):
-    # Create the destination directory if it doesn't exist
-    if not os.path.exists(destination_dir):
-        os.makedirs(destination_dir)
+def copy_and_sort(source_dir, dest_dir):
+    # Перевірка існування вихідної директорії
+    if not os.path.exists(source_dir):
+        print(f"Директорія '{source_dir}' не існує.")
+        return
 
-    # Walk through the source directory recursively
-    for root, dirs, files in os.walk(source_dir):
-        for file in files:
-            # Get the full path of the file
-            source_file_path = os.path.join(root, file)
-            # Get the extension of the file
-            _, file_extension = os.path.splitext(file)
-            # Define the destination subdirectory based on the file extension
-            destination_subdir = os.path.join(destination_dir, file_extension[1:])
-            # Create the subdirectory if it doesn't exist
-            if not os.path.exists(destination_subdir):
-                os.makedirs(destination_subdir)
-            # Define the destination file path
-            destination_file_path = os.path.join(destination_subdir, file)
-            try:
-                # Copy the file to the destination directory
-                shutil.copy2(source_file_path, destination_file_path)
-                print(f"Successfully copied '{source_file_path}' to '{destination_file_path}'")
-            except Exception as e:
-                print(f"Failed to copy '{source_file_path}' to '{destination_file_path}': {e}")
+    # Перевірка існування директорії призначення, або створення нової
+    if not os.path.exists(dest_dir):
+        os.makedirs(dest_dir)
+
+    # Отримання списку файлів та піддиректорій в вихідній директорії
+    contents = os.listdir(source_dir)
+
+    for item in contents:
+        item_path = os.path.join(source_dir, item)
+        # Якщо це файл, копіюємо його
+        if os.path.isfile(item_path):
+            # Отримуємо розширення файлу
+            extension = os.path.splitext(item)[1].strip('.')
+            # Створюємо директорію з назвою розширення, якщо вона ще не існує
+            extension_dir = os.path.join(dest_dir, extension)
+            if not os.path.exists(extension_dir):
+                os.makedirs(extension_dir)
+            # Копіюємо файл у відповідну директорію
+            shutil.copy(item_path, extension_dir)
+            print(f"Скопійовано файл '{item}' до '{extension_dir}'.")
+        # Якщо це директорія, викликаємо функцію рекурсивно
+        elif os.path.isdir(item_path):
+            # Функція викликає саму себе для обробки піддиректорії
+            copy_and_sort(item_path, dest_dir)
 
 if __name__ == "__main__":
-    # Check if both source directory and destination directory are provided as command line arguments
-    if len(sys.argv) != 3:
-        print("Usage: python script.py <source_directory> <destination_directory>")
+    # Отримання аргументів командного рядка
+    if len(sys.argv) < 3:
+        print("Потрібно вказати шлях до вихідної директорії та (за необхідності) шлях до директорії призначення.")
         sys.exit(1)
 
     source_directory = sys.argv[1]
-    destination_directory = sys.argv[2]
-
-    # If destination directory is not provided, use 'dist' as default
-    if not destination_directory:
-        destination_directory = 'dist'
+    destination_directory = sys.argv[2] if len(sys.argv) > 2 else "dist"
 
     copy_and_sort(source_directory, destination_directory)
